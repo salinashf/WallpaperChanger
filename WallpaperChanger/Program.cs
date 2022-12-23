@@ -149,7 +149,46 @@ namespace WallpaperChanger
 
             return 0;
         }
+        
+        /// <summary>
+        /// Splits the image, each saves the file to the storage path location and sets it as the background for the specified monitor according to its sequence
+        /// </summary>
+        /// <param name="monitorStart"></param>
+        /// <param name="splitImg"></param>
+        /// <param name="file"></param>
+        /// <param name="storagePath"></param>
+        /// <returns></returns>
+        public static int SetMonitorByImgSplit(int monitorStart, int splitImg , String file, String storagePath)
+        {
+            try
+            {
+                if (!IsWin8OrHigher())
+                {
+                    Console.WriteLine("Specifying a monitor is only supported on Windows 8 or higher\n");
+                    return 1;
+                }
 
+                IDesktopWallpaper wallpaper = (IDesktopWallpaper)new DesktopWallpaper();
+                Image img = Image.FromFile(file);
+                Bitmap imgBMP = new Bitmap(img);
+                for (int indexImg = 0; indexImg < splitImg; indexImg++)
+                {
+                    Rectangle splitPartX = new Rectangle(img.Width / splitImg * indexImg, 0, img.Width / splitImg, img.Height);
+                    Bitmap imgPartBMP = imgBMP.Clone(splitPartX, imgBMP.PixelFormat);
+                    // convert and save the image as a png file (png format should work better than bmp to avoid artifacts, but only available on Win8 or higher)
+                    imgPartBMP.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png);
+                    int mntSet = monitorStart + indexImg;
+                    wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)mntSet), storagePath);
+                } 
+            }
+            catch (Exception ex)
+            { // catch everything just in case
+                Console.WriteLine("<unexpected error>\n\n" + ex.Message);
+                return 1;
+            }
+
+            return 0;
+        }
         public static int Remove()
         {
             try
