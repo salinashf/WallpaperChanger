@@ -39,6 +39,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using System.Drawing;
 
 namespace WallpaperChanger
 {
@@ -48,6 +49,8 @@ namespace WallpaperChanger
         const int SPI_SETDESKWALLPAPER = 20;
         const int SPIF_UPDATEINIFILE = 0x01;
         const int SPIF_SENDWININICHANGE = 0x02;
+
+        const string FILE_MASTER_WALLPAPER = "wallpaper";
 
         // this is the system DLL for doing wallpaper stuff
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -106,7 +109,7 @@ namespace WallpaperChanger
             }
             catch (OutOfMemoryException ex)
             {  // thrown when the file does not have a valid image format or the decoder does not support the pixel format of the file
-                Console.WriteLine("\nInvalid file format or the file format is not supported");
+                Console.WriteLine("\nInvalid file format or the file format is not supported Msg: ",ex.Message);
                 return 1;
             }
             catch (Exception ex)
@@ -125,7 +128,7 @@ namespace WallpaperChanger
         /// <param name="file"></param>
         /// <param name="storagePath"></param>
         /// <returns></returns>
-        public static int SetMonitor(int monitorIndex, String file, String storagePath)
+        public static int SetMonitor(int monitorIndex, int splitImg , String file, String storagePath)
         {
             try
             {
@@ -137,9 +140,24 @@ namespace WallpaperChanger
 
                 IDesktopWallpaper wallpaper = (IDesktopWallpaper)new DesktopWallpaper();
                 System.Drawing.Image img = System.Drawing.Image.FromFile(file);
-                // convert and save the image as a png file (png format should work better than bmp to avoid artifacts, but only available on Win8 or higher)
-                img.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png);
-                wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)monitorIndex), storagePath);
+                if (splitImg > 0){
+                    System.Drawing.Bitmap imgBMP = new System.Drawing.Bitmap(img);
+                    for (int indexImg = 0; indexImg < splitImg; indexImg++)
+                    {
+                        System.Drawing.Rectangle splitPartX = new System.Drawing.Rectangle(img.Width / splitImg * indexImg, 0, img.Width / splitImg, img.Height);
+                        System.Drawing.Bitmap imgPartBMP = imgBMP.Clone(splitPartX, imgBMP.PixelFormat);
+                        // convert and save the image as a png file (png format should work better than bmp to avoid artifacts, but only available on Win8 or higher)
+                        storagePath = storagePath.Replace(FILE_MASTER_WALLPAPER, FILE_MASTER_WALLPAPER + indexImg.ToString());
+                        imgPartBMP.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png);
+                        int mntSet = monitorIndex + indexImg;
+                        wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)mntSet), storagePath);
+                    }
+                }
+                else {
+                    // convert and save the image as a png file (png format should work better than bmp to avoid artifacts, but only available on Win8 or higher)
+                    img.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png);
+                    wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)monitorIndex), storagePath);
+                }
             }
             catch (Exception ex)
             { // catch everything just in case
@@ -176,7 +194,8 @@ namespace WallpaperChanger
                     Rectangle splitPartX = new Rectangle(img.Width / splitImg * indexImg, 0, img.Width / splitImg, img.Height);
                     Bitmap imgPartBMP = imgBMP.Clone(splitPartX, imgBMP.PixelFormat);
                     // convert and save the image as a png file (png format should work better than bmp to avoid artifacts, but only available on Win8 or higher)
-                    imgPartBMP.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png);
+                    storagePath = storagePath.Replace("wallpaper", "wallpaper" + indexImg.ToString());
+                    imgPartBMP.Save(storagePath, System.Drawing.Imaging.ImageFormat.Png); 
                     int mntSet = monitorStart + indexImg;
                     wallpaper.SetWallpaper(wallpaper.GetMonitorDevicePathAt((uint)mntSet), storagePath);
                 } 
@@ -234,13 +253,14 @@ namespace WallpaperChanger
             bool usingConfig = false;
             bool setMonitor = false;
             int monitorIndex = 0;
+            int splitImg = 0;
             Style style = Style.Stretched; // default value
             // Use png file for Win 8 or higher, otherwise use bmp file
             String fileType = "png";
             if (!IsWin8OrHigher())
                 fileType = "bmp";
             // get the path to the user's temp folder
-            String storagePath = Path.Combine(Path.GetTempPath(), "wallpaper." + fileType);
+            String storagePath = Path.Combine(Path.GetTempPath(), FILE_MASTER_WALLPAPER+"." + fileType);
 
             // check the arguments
             if (args.Length == 0)
@@ -289,6 +309,24 @@ namespace WallpaperChanger
                     monitorIndex = int.Parse(args[1]);
                     path = args[2];
                 }
+                // specify monitor
+                else if (args[0] == "-s" || args[0] == "-split")
+                {
+                    if (!IsWin8OrHigher())
+                    {
+                        Console.WriteLine("Specifying a monitor is only supported on Windows 8 or higher\n");
+                        return 1;
+                    }
+                    if (args.Length < 3)
+                    {
+                        Console.WriteLine(help);
+                        return 1;
+                    }
+                    setMonitor = true;
+                    monitorIndex = int.Parse(args[1]);
+                    path = args[2];
+                    splitImg = int.Parse(args[3]);
+                }
                 // retrieve file/directory if we are not using config file
                 else
                 {
@@ -299,7 +337,7 @@ namespace WallpaperChanger
                     }
                 }
             }
-
+/*
             int index = (setMonitor) ? 3 : 2;
             // location directory may be specified
             if (args.Length >= index + 1)
@@ -312,7 +350,7 @@ namespace WallpaperChanger
                 }
                 storagePath = Path.Combine(args[index], "wallpaper." + fileType);
             }
-
+*/
             if (usingConfig)
             {
                 String file;
@@ -325,7 +363,7 @@ namespace WallpaperChanger
 
                 int status = 0;
                 if (setMonitor)
-                    status = Wallpaper.SetMonitor(monitorIndex, file, storagePath);
+                    status = Wallpaper.SetMonitor(monitorIndex, splitImg, file, storagePath);
                 else
                     status = Wallpaper.Set(file, style, storagePath);
                 
@@ -336,7 +374,7 @@ namespace WallpaperChanger
             {
                 int status = 0;
                 if (setMonitor)
-                    status = Wallpaper.SetMonitor(monitorIndex, path, storagePath);
+                    status = Wallpaper.SetMonitor(monitorIndex, splitImg, path, storagePath);
                 else
                     status = Wallpaper.Set(path, style, storagePath);
                 if (status == 1)
@@ -352,7 +390,7 @@ namespace WallpaperChanger
                 }
                 int status = 0;
                 if (setMonitor)
-                    status = Wallpaper.SetMonitor(monitorIndex, file, storagePath);
+                    status = Wallpaper.SetMonitor(monitorIndex, splitImg, file, storagePath);
                 else
                     status = Wallpaper.Set(file, style, storagePath);
                 if (status == 1)
