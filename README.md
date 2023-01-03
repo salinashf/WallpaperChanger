@@ -36,7 +36,9 @@ Optional flags:
 *   -h, -help   - Display the usage help
 *   -r, -remove - Remove the current wallpaper
 *   -m, monitor <index> - Set the image on the specified monitor (0 indexed)
-
+*   -s, splitmonitor  <index> - Set the image on the specified monitor (0 indexed start ) <index> is the complete path to a directory for storing the generated file   <index> - Total monitor  to split   
+example -s 1 C:\wallpaper\wallpaper2.jpg 3#
+  
 When using the monitor option, the full syntax is: `-m <index> <file|directory> <location>`  The style does not need to be specified since it appears to always default to Stretched.  Note this functionality is only available on Windows 8 or higher.
 
 Alternatively a config file can be placed in the same directory as the 
