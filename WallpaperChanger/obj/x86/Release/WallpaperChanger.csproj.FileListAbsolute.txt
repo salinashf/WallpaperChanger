@@ -1,0 +1,7 @@
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\obj\x86\Release\WallpaperChanger.csproj.AssemblyReference.cache
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\obj\x86\Release\WallpaperChanger.csproj.CoreCompileInputs.cache
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\bin\Release\WallpaperChanger.exe.config
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\bin\Release\WallpaperChanger.exe
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\bin\Release\WallpaperChanger.pdb
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\obj\x86\Release\WallpaperChanger.exe
+A:\wallpaperChanger\Source\WallpaperChanger\WallpaperChanger\obj\x86\Release\WallpaperChanger.pdb
